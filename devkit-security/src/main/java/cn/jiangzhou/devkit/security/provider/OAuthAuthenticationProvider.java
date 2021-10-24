@@ -2,6 +2,7 @@ package cn.jiangzhou.devkit.security.provider;
 
 import cn.hutool.core.util.StrUtil;
 import cn.jiangzhou.devkit.security.bean.OAuthAuthenticationToken;
+import cn.jiangzhou.devkit.security.service.OAuthService;
 import cn.jiangzhou.devkit.security.service.UserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -17,6 +18,9 @@ public class OAuthAuthenticationProvider implements AuthenticationProvider {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @Autowired
+    private OAuthService oAuthService;
+
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String type = (String) authentication.getPrincipal();
@@ -24,17 +28,13 @@ public class OAuthAuthenticationProvider implements AuthenticationProvider {
         if (StrUtil.isEmpty(type) || StrUtil.isEmpty(code)) {
             throw new AuthenticationServiceException("缺少OAuthType或OAuthCode");
         }
-        // TODO 访问第三方平台，获取OpenID等信息
-
-        // TODO 根据OpenID从tsa_openid中查询用户绑定信息
-
-        // TODO 如果不存在，就保存新的OpenID及用户绑定信息到tsa_openid，user_id为0
-
-        // TODO 如果存在且user_id不为0，查询用户信息
-        Integer id = 0;
+        Long id = oAuthService.auth(type, code);
+        if (id == null) {
+            throw new AuthenticationServiceException("登陆失败");
+        }
         UserDetails user = this.userDetailsService.loadUserById(id);
         if (user == null) {
-            // 未查询到用户信息，脏数据，抛出异常。tsa_openid与tsa_user表关联关系异常，需要手工检查。
+            // 未查询到用户信息，脏数据，抛出异常。关联关系异常，需要手工检查。
             throw new AuthenticationServiceException("用户数据异常");
         }
 

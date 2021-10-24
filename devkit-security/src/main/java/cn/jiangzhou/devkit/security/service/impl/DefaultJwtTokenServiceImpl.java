@@ -25,7 +25,7 @@ import java.util.Map;
  */
 @ConditionalOnBean(TokenService.class)
 @Component
-public class JwtTokenServiceImpl implements TokenService, Serializable {
+public class DefaultJwtTokenServiceImpl implements TokenService, Serializable {
 
     private static final String CLAIM_KEY_USER_ID = "sub";
 
@@ -47,7 +47,7 @@ public class JwtTokenServiceImpl implements TokenService, Serializable {
     }
 
     public Boolean validateToken(String token, UserDetails userDetails) {
-        Integer userId = getUserIdFromToken(token);
+        Long userId = getUserIdFromToken(token);
         return (userDetails.getUsername().equals(String.valueOf(userId)) && !isTokenExpired(token));
     }
 
@@ -56,8 +56,8 @@ public class JwtTokenServiceImpl implements TokenService, Serializable {
         return expiration.before(new Date());
     }
 
-    public Integer getUserIdFromToken(String token) {
-        return Integer.parseInt(getClaimsFromToken(token).getSubject());
+    public Long getUserIdFromToken(String token) {
+        return Long.parseLong(getClaimsFromToken(token).getSubject());
     }
 
     public Date getExpirationDateFromToken(String token) {

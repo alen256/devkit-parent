@@ -21,7 +21,7 @@ public class UserIdHandlerMethodArgumentResolver implements HandlerMethodArgumen
     public Object resolveArgument(MethodParameter methodParameter, ModelAndViewContainer modelAndViewContainer, NativeWebRequest nativeWebRequest, WebDataBinderFactory webDataBinderFactory) throws Exception {
         try {
             User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            return Integer.valueOf(user.getUsername());
+            return Long.valueOf(user.getUsername());
         } catch (Exception e) {
             return null;
         }

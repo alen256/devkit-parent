@@ -9,6 +9,7 @@ import cn.jiangzhou.devkit.security.provider.MessageAuthenticationProvider;
 import cn.jiangzhou.devkit.security.provider.OAuthAuthenticationProvider;
 import cn.jiangzhou.devkit.security.provider.PasswordAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,26 +24,32 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import javax.annotation.Resource;
+
 @Configuration
 @EnableWebSecurity
+@EnableConfigurationProperties(DevkitSecurityProperty.class)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Autowired
+    @Resource
+    private DevkitSecurityProperty devkitSecurityProperty;
+
+    @Resource
     private MessageAuthenticationProvider messageAuthenticationProvider;
 
-    @Autowired
+    @Resource
     private OAuthAuthenticationProvider oAuthAuthenticationProvider;
 
-    @Autowired
+    @Resource
     private PasswordAuthenticationProvider passwordAuthenticationProvider;
 
-    @Autowired
+    @Resource
     private JwtAuthenticationProvider jwtAuthenticationProvider;
 
-    @Autowired
+    @Resource
     private CustomAccessDeniedHandler customAccessDeniedHandler;
 
-    @Autowired
+    @Resource
     private AuthenticationFailedEntryPoint authenticationFailedEntryPoint;
 
     @Bean
@@ -52,9 +59,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.authenticationProvider(messageAuthenticationProvider);
-        auth.authenticationProvider(oAuthAuthenticationProvider);
-        auth.authenticationProvider(passwordAuthenticationProvider);
+        if (devkitSecurityProperty.getEnableMethods().getPassword()) {
+            auth.authenticationProvider(passwordAuthenticationProvider);
+        }
+        if (devkitSecurityProperty.getEnableMethods().getMessage()) {
+            auth.authenticationProvider(messageAuthenticationProvider);
+        }
+        if (devkitSecurityProperty.getEnableMethods().getOauth()) {
+            auth.authenticationProvider(oAuthAuthenticationProvider);
+        }
         auth.authenticationProvider(jwtAuthenticationProvider);
     }
 
@@ -83,26 +96,32 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 // 当用户访问资源因权限不足时发送 403 响应
                 .accessDeniedHandler(customAccessDeniedHandler)
                 .and()
-                .headers().frameOptions().disable()
-                .and()
-                .authorizeRequests()
-                //允许认证相关接口
-                .antMatchers("/code/**").permitAll()
-//                .antMatchers("/projects**").hasAnyRole("USER")
-                .anyRequest().authenticated()
-        ;
+                .headers().frameOptions().disable();
+        for (DevkitSecurityProperty.Authorize authorize : devkitSecurityProperty.getAuthorizes()) {
+            if (authorize.getPermitAll()) {
+                http.authorizeRequests()
+                        .antMatchers(authorize.getPatterns()).permitAll();
+            } else {
+                http.authorizeRequests()
+                        .antMatchers(authorize.getPatterns()).hasAnyRole(authorize.getRoles());
+            }
+        }
+        http.authorizeRequests().anyRequest().authenticated();
     }
 
     @Override
     public void configure(WebSecurity web) {
         web.ignoring()
-                .antMatchers(HttpMethod.OPTIONS, "/**")
-                .antMatchers("/v2/api-docs")
-                .antMatchers("/v3/api-docs")
-                .antMatchers("/webjars/springfox-swagger-ui/**")
-                .antMatchers("/swagger-ui/")
-                .antMatchers("/swagger-ui/**")
-                .antMatchers("/swagger-resources/**");
+                .antMatchers(HttpMethod.OPTIONS, "/**");
+        if (devkitSecurityProperty.getSwagger()) {
+
+            web.ignoring().antMatchers("/v2/api-docs")
+                    .antMatchers("/v3/api-docs")
+                    .antMatchers("/webjars/springfox-swagger-ui/**")
+                    .antMatchers("/swagger-ui/")
+                    .antMatchers("/swagger-ui/**")
+                    .antMatchers("/swagger-resources/**");
+        }
     }
 
     @Bean

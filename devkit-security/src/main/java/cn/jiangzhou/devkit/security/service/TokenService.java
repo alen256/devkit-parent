@@ -12,7 +12,7 @@ public interface TokenService {
 
     Boolean isTokenExpired(String token);
 
-    Integer getUserIdFromToken(String token);
+    Long getUserIdFromToken(String token);
 
     Date getExpirationDateFromToken(String token);
 

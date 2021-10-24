@@ -32,7 +32,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
             if (tokenService.isTokenExpired(jwt)) {
                 throw new AuthenticationServiceException("Token已过期");
             }
-            Integer id = tokenService.getUserIdFromToken(jwt);
+            Long id = tokenService.getUserIdFromToken(jwt);
             UserDetails user = this.userDetailsService.loadUserById(id);
             if (user == null) {
                 throw new AuthenticationServiceException("用户不存在");

@@ -8,6 +8,7 @@ import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
@@ -34,6 +35,9 @@ public class GlobalResponseBodyAdvice implements ResponseBodyAdvice<Object> {
     public BaseResult<Void> handlerReException(HttpServletRequest request, Exception e) {
         if (e instanceof BusinessException) {
             return BaseResult.wrap(((BusinessException) e).getCode(), e.getMessage());
+        }
+        else if (e instanceof MissingServletRequestParameterException) {
+            return BaseResult.wrap(400, e.getMessage());
         }
         log.warn(e.getMessage(), e);
         return BaseResult.wrap(500, e.getMessage());

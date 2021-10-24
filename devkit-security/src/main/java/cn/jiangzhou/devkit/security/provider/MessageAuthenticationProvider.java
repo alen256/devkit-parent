@@ -37,7 +37,7 @@ public class MessageAuthenticationProvider implements AuthenticationProvider {
         UserDetails user = this.userDetailsService.loadUserByPhone(phone);
         if (user == null) {
             // 未查询到用户信息，抛出异常
-            // TODO 改为自动注册
+            // TODO 自动注册
             throw new AuthenticationServiceException("手机号未注册");
         }
 
